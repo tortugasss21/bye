@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carta</title>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#000;--fg:#e8e0d4;--accent:#b8a98a;--dim:#555}
+
+  body{background:var(--bg);color:var(--fg);font-family:'Cormorant Garamond',serif;min-height:100vh;overflow-x:hidden;cursor:crosshair}
+
+  @keyframes flicker{0%,100%{opacity:1;transform:scaleX(1) scaleY(1)}25%{opacity:.85;transform:scaleX(.97) scaleY(1.04)}50%{opacity:.95;transform:scaleX(1.02) scaleY(.97)}75%{opacity:.88;transform:scaleX(.98) scaleY(1.02)}}
+  @keyframes flame{0%,100%{transform:translateX(-50%) scaleX(1) scaleY(1);filter:blur(1px)}33%{transform:translateX(-52%) scaleX(.9) scaleY(1.1);filter:blur(1.5px)}66%{transform:translateX(-48%) scaleX(1.1) scaleY(.95);filter:blur(.8px)}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes rise{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes drift{0%{transform:translateY(110vh) translateX(0) rotate(0deg);opacity:0}10%{opacity:.5}90%{opacity:.2}100%{transform:translateY(-10vh) translateX(var(--dx)) rotate(360deg);opacity:0}}
+
+  .candle-group{position:fixed;display:flex;gap:14px;pointer-events:none;z-index:0}
+  .candle-group.tl{top:28px;left:28px}.candle-group.tr{top:28px;right:28px}
+  .candle-group.bl{bottom:28px;left:28px}.candle-group.br{bottom:28px;right:28px}
+
+  .candle{display:flex;flex-direction:column;align-items:center;animation:flicker 3s infinite}
+  .candle:nth-child(2){animation-delay:.7s;animation-duration:2.6s}
+  .candle:nth-child(3){animation-delay:1.3s;animation-duration:3.3s}
+  .flame-wrap{position:relative;width:12px;height:22px;margin-bottom:-2px}
+  .flame{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:8px;height:18px;background:radial-gradient(ellipse at 50% 80%,#fff8e0 0%,#ffcc44 30%,#ff7700 65%,transparent 100%);border-radius:50% 50% 30% 30%;animation:flame 2.1s ease-in-out infinite;filter:blur(1px)}
+  .flame::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:10px;background:rgba(255,255,220,.9);border-radius:50%;filter:blur(1px)}
+  .wick{width:2px;height:6px;background:#333;border-radius:1px}
+  .wax{width:14px;background:linear-gradient(180deg,#ddd 0%,#bbb 100%);border-radius:2px 2px 3px 3px;box-shadow:inset -2px 0 4px rgba(0,0,0,.3)}
+  .candle.sm .wax{height:38px}.candle.md .wax{height:54px}.candle.lg .wax{height:70px}
+
+  .border-frame{position:fixed;inset:14px;border:1px solid rgba(184,169,138,.18);pointer-events:none;z-index:0}
+  .border-frame::before{content:'';position:absolute;inset:6px;border:1px solid rgba(184,169,138,.07)}
+
+  .particle{position:fixed;border-radius:50%;pointer-events:none;animation:drift linear infinite;background:rgba(184,169,138,.35)}
+
+  /* ══ SEAL SCREEN ══ */
+  #sealScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;position:relative;z-index:2;animation:fadeIn .7s ease both}
+  .seal-label{font-family:'IM Fell English',serif;font-size:clamp(26px,5vw,46px);color:#fff;letter-spacing:.06em;margin-bottom:10px;text-align:center;animation:rise 1s ease .3s both;line-height:1.3}
+  .seal-sub{font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--accent);opacity:.6;font-size:15px;letter-spacing:.14em;margin-bottom:36px;animation:fadeIn 1s ease .5s both}
+  .open-btn{padding:15px 56px;background:#fff;color:#000;border:none;font-family:'IM Fell English',serif;font-size:18px;letter-spacing:.14em;cursor:pointer;transition:all .25s;clip-path:polygon(6px 0%,calc(100% - 6px) 0%,100% 6px,100% calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,0% calc(100% - 6px),0% 6px);animation:rise 1s ease .7s both}
+  .open-btn:hover{background:var(--accent);transform:translateY(-2px);box-shadow:0 8px 28px rgba(184,169,138,.25)}
+
+  /* ══ LETTER VIEW ══ */
+  #letterView{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;position:relative;z-index:2;padding:40px 20px}
+  .letter-wrap{display:flex;flex-direction:column;align-items:center;text-align:center;max-width:560px;width:100%}
+  .letter-ornament{font-family:'IM Fell English',serif;color:var(--accent);font-size:20px;opacity:.45;letter-spacing:.3em;margin-bottom:20px;animation:fadeIn .8s ease .1s both}
+  #letterMain{font-family:'IM Fell English',serif;font-size:clamp(52px,11vw,100px);color:#fff;line-height:1;text-shadow:0 0 80px rgba(255,255,255,.06);animation:rise .9s ease .2s both}
+  #letterSub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:17px;letter-spacing:.14em;color:var(--accent);opacity:.7;margin-top:8px;animation:fadeIn .9s ease .4s both}
+  .divider{display:flex;align-items:center;gap:12px;margin:22px 0;width:260px;color:var(--accent);opacity:.4}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+  .divider span{font-size:14px;font-family:'IM Fell English',serif}
+  #letterMsg{font-family:'Cormorant Garamond',serif;font-size:18px;line-height:1.9;color:rgba(232,224,212,.72);white-space:pre-wrap;max-width:480px;animation:fadeIn 1s ease .6s both}
+
+  /* ══ CREATOR VIEW ══ */
+  #creatorView{display:none;min-height:100vh;align-items:center;justify-content:center;padding:40px 20px;position:relative;z-index:2}
+  .creator-panel{width:min(640px,96vw);border:1px solid rgba(184,169,138,.22);background:#080808;padding:48px 44px 40px;position:relative}
+  .creator-panel::before,.creator-panel::after{content:'';position:absolute;width:28px;height:28px;border-color:rgba(184,169,138,.35);border-style:solid}
+  .creator-panel::before{top:-1px;left:-1px;border-width:2px 0 0 2px}
+  .creator-panel::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0}
+  .cp-title{font-family:'IM Fell English',serif;font-size:26px;color:#fff;letter-spacing:.05em;margin-bottom:4px}
+  .cp-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;letter-spacing:.15em;color:var(--accent);opacity:.6;margin-bottom:32px}
+  label{display:block;font-size:11px;letter-spacing:.22em;color:var(--dim);text-transform:uppercase;margin-bottom:7px}
+  input[type=text],textarea{width:100%;background:#0e0e0e;border:1px solid rgba(184,169,138,.18);color:var(--fg);font-family:'Cormorant Garamond',serif;font-size:16px;padding:11px 14px;outline:none;transition:border-color .2s;margin-bottom:20px}
+  input[type=text]:focus,textarea:focus{border-color:rgba(184,169,138,.45)}
+  textarea{min-height:130px;resize:vertical}
+  .gen-btn{width:100%;padding:14px;background:#fff;color:#000;border:none;font-family:'IM Fell English',serif;font-size:16px;letter-spacing:.12em;cursor:pointer;transition:all .2s}
+  .gen-btn:hover{background:var(--accent)}
+  .link-box{display:none;margin-top:24px;padding:18px 16px;border:1px dashed rgba(184,169,138,.22);background:#0a0a0a}
+  .link-box-label{font-size:11px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;margin-bottom:10px}
+  .link-row{display:flex;gap:8px;align-items:stretch}
+  .link-row input{flex:1;background:#111;border:1px solid rgba(184,169,138,.18);color:var(--accent);font-family:'Cormorant Garamond',serif;font-size:13px;padding:9px 12px;outline:none;margin:0}
+  .copy-btn{padding:9px 18px;background:#fff;color:#000;border:none;font-family:'IM Fell English',serif;font-size:13px;letter-spacing:.1em;cursor:pointer;transition:all .2s;white-space:nowrap}
+  .copy-btn:hover{background:var(--accent)}
+  .copy-hint{font-size:12px;color:var(--dim);font-style:italic;margin-top:8px;font-family:'Cormorant Garamond',serif}
+
+  @media(max-width:500px){.creator-panel{padding:28px 18px 24px}.candle-group.bl,.candle-group.br{display:none}}
+</style>
+</head>
+<body>
+
+<div class="candle-group tl">
+  <div class="candle sm"><div class="flame-wrap"><div class="flame"></div></div><div class="wick"></div><div class="wax"></div></div>
+  <div class="candle lg"><div class="flame-wrap"><div class="flame"></div></div><div class="wick"></div><div class="wax"></div></div>
+  <div class="candle md"><div class="flame-wrap"><div class="flame"></div></div><div class="wick"></div><div class="wax"></div></div>
+</div>
+<div class="candle-group tr">
+  <div class="candle md"><div class="flame-wrap"><div class="flame"></div></div><div class="wick"></div><div class="wax"></div></div>
+  <div class="candle lg"><div class="flame-wrap"><div class="flame"></div></div><div class="wick"></div><div class="wax"></div></div>
+  <div class="candle sm"><div class="flame-wrap"><div class="flame"></div></div><div class="wick"></div><div class="wax"></div></div>
+</div>
+<div class="candle-group bl">
+  <div class="candle sm"><div class="flame-wrap"><div class="flame"></div></div><div class="wick"></div><div class="wax"></div></div>
+  <div class="candle md"><div class="flame-wrap"><div class="flame"></div></div><div class="wick"></div><div class="wax"></div></div>
+</div>
+<div class="candle-group br">
+  <div class="candle md"><div class="flame-wrap"><div class="flame"></div></div><div class="wick"></div><div class="wax"></div></div>
+  <div class="candle sm"><div class="flame-wrap"><div class="flame"></div></div><div class="wick"></div><div class="wax"></div></div>
+</div>
+<div class="border-frame"></div>
+
+<!-- Selo (destinatário vê isso primeiro) -->
+<div id="sealScreen">
+  <div class="seal-label">Você recebeu<br>uma carta</div>
+  <div class="seal-sub">abra quando estiver pronto</div>
+  <button class="open-btn" onclick="openLetter()">Clique</button>
+</div>
+
+<!-- Carta revelada -->
+<div id="letterView">
+  <div class="letter-wrap">
+    <div class="letter-ornament">✦ · ✦ · ✦</div>
+    <div id="letterMain">Obrigado</div>
+    <div id="letterSub"></div>
+    <div class="divider"><span>✦</span></div>
+    <div id="letterMsg"></div>
+  </div>
+</div>
+
+<!-- Criador (acesse com ?criar na URL) -->
+<div id="creatorView">
+  <div class="creator-panel">
+    <div class="cp-title">Escrever carta</div>
+    <div class="cp-sub">personalize e gere o link para enviar</div>
+
+    <label>Texto principal</label>
+    <input type="text" id="inMain" value="Obrigado" placeholder="ex: Obrigado, Adeus, Saudade…">
+
+    <label>Subtítulo</label>
+    <input type="text" id="inSub" value="pela sua presença" placeholder="ex: pela sua presença">
+
+    <label>Mensagem (opcional)</label>
+    <textarea id="inMsg" placeholder="Escreva aqui o que quiser dizer…"></textarea>
+
+    <button class="gen-btn" onclick="gerarLink()">Gerar link da carta</button>
+
+    <div class="link-box" id="linkBox">
+      <div class="link-box-label">Link para enviar</div>
+      <div class="link-row">
+        <input type="text" id="linkOut" readonly>
+        <button class="copy-btn" onclick="copiarLink()">Copiar</button>
+      </div>
+      <div class="copy-hint" id="copyHint">Envie este link para a pessoa</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Partículas
+  function spawnParticle(){
+    const p=document.createElement('div');p.className='particle';
+    const s=Math.random()*3+1;
+    p.style.cssText=`left:${Math.random()*100}vw;width:${s}px;height:${s}px;--dx:${(Math.random()-.5)*120}px;animation-duration:${9+Math.random()*13}s;animation-delay:${Math.random()*8}s;opacity:0`;
+    document.body.appendChild(p);setTimeout(()=>p.remove(),24000);
+  }
+  for(let i=0;i<18;i++)spawnParticle();
+  setInterval(spawnParticle,2000);
+
+  // Roteamento
+  const params=new URLSearchParams(location.search);
+  const isCriador=params.has('criar');
+  const hasData=params.has('m');
+
+  if(isCriador){
+    document.getElementById('sealScreen').style.display='none';
+    document.getElementById('creatorView').style.display='flex';
+  } else if(hasData){
+    const main=decodeURIComponent(params.get('m')||'Obrigado');
+    const sub=decodeURIComponent(params.get('s')||'');
+    const msg=decodeURIComponent(params.get('t')||'');
+    document.getElementById('letterMain').textContent=main;
+    const subEl=document.getElementById('letterSub');
+    if(sub){subEl.textContent=sub;}else{subEl.style.display='none';}
+    const msgEl=document.getElementById('letterMsg');
+    if(msg){msgEl.textContent=msg;}else{msgEl.style.display='none';}
+    // Mostrar seal screen — já está visível por padrão
+  } else {
+    // Sem parâmetros: redireciona para o criador
+    document.getElementById('sealScreen').style.display='none';
+    document.getElementById('creatorView').style.display='flex';
+  }
+
+  function openLetter(){
+    document.getElementById('sealScreen').style.display='none';
+    const lv=document.getElementById('letterView');
+    lv.style.display='flex';
+  }
+
+  function gerarLink(){
+    const m=encodeURIComponent(document.getElementById('inMain').value.trim()||'Obrigado');
+    const s=encodeURIComponent(document.getElementById('inSub').value.trim());
+    const t=encodeURIComponent(document.getElementById('inMsg').value.trim());
+    const base=location.origin+location.pathname;
+    const link=`${base}?m=${m}&s=${s}&t=${t}`;
+    document.getElementById('linkOut').value=link;
+    document.getElementById('linkBox').style.display='block';
+    document.getElementById('copyHint').textContent='Envie este link para a pessoa';
+  }
+
+  function copiarLink(){
+    const inp=document.getElementById('linkOut');
+    navigator.clipboard.writeText(inp.value).then(()=>{
+      document.getElementById('copyHint').textContent='✓ Link copiado!';
+      setTimeout(()=>document.getElementById('copyHint').textContent='Envie este link para a pessoa',2500);
+    }).catch(()=>{inp.select();document.execCommand('copy');document.getElementById('copyHint').textContent='✓ Copiado!'});
+  }
+</script>
+</body>
+</html>
